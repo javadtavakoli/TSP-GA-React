@@ -231,6 +231,17 @@ function App() {
             </div>
           </div>
           <div className="description">
+            <div className="label">Cities Count</div>
+            <div className="value">
+              <input
+                defaultValue={citiesCountRef.current}
+                onChange={(e) => {
+                  citiesCountRef.current = Number.parseInt(e.target.value);
+                }}
+              />
+            </div>
+          </div>
+          <div className="description">
             <div className="label">Tornaument Size</div>
             <div className="value">
               <input
