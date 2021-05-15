@@ -9,7 +9,7 @@ export const CrossOver = (routeA: Route, routeB: Route): [Route, Route] => {
   const chromosomeA: number[] = [];
   const chromosomeB: number[] = [];
   const mutationPoint = randomGenerator(routeLength);
-  
+
   // Intitial chromosomes.
   for (let geneIndex = 0; geneIndex < routeLength; geneIndex++) {
     if (geneIndex < mutationPoint) {
@@ -20,7 +20,7 @@ export const CrossOver = (routeA: Route, routeB: Route): [Route, Route] => {
       chromosomeA.push(GENE_PLACEHOLDER);
     }
   }
-  
+
   // Fill other part.
   for (let geneIndex = 0; geneIndex < routeLength; geneIndex++) {
     if (geneIndex < mutationPoint) {
@@ -60,35 +60,42 @@ export const Mutation = (route: Route, mutationRate: number): Route => {
   const chromosome = [...route.route];
   const mutateR = Math.random();
   if (mutationRate > mutateR) {
-
     const randMutiationPointA = randomGenerator(chromosome.length);
     const randMutiationPointB = randomGenerator(chromosome.length);
     const temp = chromosome[randMutiationPointA];
     chromosome[randMutiationPointA] = chromosome[randMutiationPointB];
     chromosome[randMutiationPointB] = temp;
-    
-    
   }
   const newRoute = new Route(false);
   newRoute.route = [...chromosome];
   return route;
 };
-export const TournaumentSelection = (population: Population,tornaumentSize:number): Route => {
+export const TournaumentSelection = (
+  population: Population,
+  tornaumentSize: number
+): Route => {
   const populationRoutes = population.routes;
   const populationLength = population.routes.length;
   const k = tornaumentSize;
   const tornaumentPopulation = new Population(false);
   for (let index = 0; index < k; index++) {
     const randomIndex = randomGenerator(populationLength - 1);
-    
     tornaumentPopulation.routes.push(populationRoutes[randomIndex]);
-    console.log("tor");
-    
   }
-  console.log("fit");
-  
-  const fittest = tornaumentPopulation.getFittest();    
-console.log("fite");
+  const fittest = tornaumentPopulation.getFittest();
 
   return fittest;
+};
+export const SortRoutes = (routes: Route[]): Route[] => {
+  const routesWithFitness = routes.map(
+    (route) => ({ route, fitness: route.getFitness() } as RouteFitness)
+  );
+  const sortedRoutes = routesWithFitness
+    .sort((a, b) => a.fitness - b.fitness)
+    .map((r) => r.route);
+  return sortedRoutes;
+};
+type RouteFitness = {
+  route: Route;
+  fitness: number;
 };

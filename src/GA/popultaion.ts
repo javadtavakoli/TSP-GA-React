@@ -1,8 +1,5 @@
 import { Route } from "./route";
-type RouteFitness = {
-  route: Route;
-  fitness: number;
-};
+
 export class Population {
   public routes: Route[] = [];
   constructor(intialize: boolean = true, length?: number) {
@@ -46,9 +43,7 @@ export class Population {
         maxFitness = currentFittness;
         bestRoute = currentRoute;        
       }
-    }
-    console.log(bestRoute.routeUniqueID());
-    
+    }    
     return bestRoute;
   };
 }

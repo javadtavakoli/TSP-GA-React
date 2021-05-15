@@ -4,7 +4,12 @@ import "./App.css";
 import { CitiesInitializer, City } from "./GA/city";
 import { Route } from "./GA/route";
 import { Population } from "./GA/popultaion";
-import { CrossOver, Mutation, TournaumentSelection } from "./GA/functions";
+import {
+  CrossOver,
+  Mutation,
+  SortRoutes,
+  TournaumentSelection,
+} from "./GA/functions";
 import { logRoutes } from "./utilities/logger";
 const calcPercent = (total: number, percent: number) =>
   Math.floor((percent * total) / 100);
@@ -20,8 +25,8 @@ function App() {
   const [height, setHeight] = useState(400);
   const [width, setWidth] = useState(600);
   const [currentGeneration, setCurrentGeneration] = useState(0);
-  const mutationReteRef = useRef(1);
-  const crossOverRateRef = useRef(0.78);
+  const mutationReteRef = useRef(0.3);
+  const crossOverRateRef = useRef(0.90);
   const citiesCountRef = useRef(20);
   const populationSizeRef = useRef(100);
   const generationsCountRef = useRef(1000);
@@ -64,39 +69,28 @@ function App() {
       generationIndex++
     ) {
       const childPopulation = new Population(false);
-      childPopulation.routes = [...currentPopulation.routes];
-      console.log("Ready");
-
       // Crossover
-      for (
-        let crossIndex = 0;
-        crossIndex < childPopulation.routes.length;
-        crossIndex++
-      ) {
+      do{
         const randCross = Math.random();
         if (crossOverRateRef.current > randCross) {
           const chromosomeA = TournaumentSelection(
             currentPopulation,
             tornaumentSizeRef.current
           );
-          console.log("cross",crossIndex);
-          
           let chromosomeB: Route;
           do {
             chromosomeB = TournaumentSelection(
               currentPopulation,
               tornaumentSizeRef.current
             );
-            console.log("trying");
-                        
           } while (chromosomeA.routeUniqueID() == chromosomeB.routeUniqueID());
-          console.log("Fixed");
-          
+
           const [childA, childB] = CrossOver(chromosomeA, chromosomeB);
           childPopulation.addRoute(childA);
           childPopulation.addRoute(childB);
         }
-      }
+      }while(childPopulation.routes.length<calcPercent(populationSizeRef.current,150))
+
       const newPopulation = new Population(false);
       do {
         let selectedChromosome: Route;
@@ -107,9 +101,13 @@ function App() {
         );
 
         newPopulation.addRoute(selectedChromosome);
-        console.log(newPopulation.routes.length);
-      } while (newPopulation.routes.length < populationSizeRef.current);
-
+      } while (
+        newPopulation.routes.length < calcPercent(populationSizeRef.current, 95)
+      );
+      const sortedParentRoutes = SortRoutes(currentPopulation.routes);
+      for (let i = 0; i < calcPercent(populationSizeRef.current, 5); i++) {
+        newPopulation.addRoute(sortedParentRoutes[i]);
+      }
       // Mutation
       for (let index = 0; index < newPopulation.routes.length; index++) {
         newPopulation.routes[index] = Mutation(
@@ -117,39 +115,19 @@ function App() {
           mutationReteRef.current
         );
       }
+      console.log("population", newPopulation.routes.length);
+
       setCurrentGeneration(generationIndex);
       currentPopulation = newPopulation;
       const fittest = currentPopulation.getFittest();
-      logRoutes(newPopulation, generationIndex);
       drawLines(fittest);
-      await delay(1000);
+      await delay(1);
     }
   };
   useEffect(() => {
     initialCities();
     setLines([]);
     let currentPopulation = new Population(true, 1000);
-
-    
-    // const b = new Route(true);
-    // const c = new Route(true);
-    // const d = new Route(true);
-    // const e = new Route(true);
-    // const f = new Route(true);
-    // const g = new Route(true);
-    // const h = new Route(true);
-    // const i = new Route(true);
-    // const j = new Route(true);
-
-    // const population = new Population(false);
-    // population.routes = [a, b, c, d, e, f, g, h, i, j];
-    // console.log(population.routes.map((r) => r.route));
-
-    // const test1 = TournaumentSelection(population, 2);
-    // const test2 = TournaumentSelection(population, 2);
-    // const test3 = TournaumentSelection(population, 2);
-    // const test4 = TournaumentSelection(population, 3);
-    // const test5 = TournaumentSelection(population, 5);
   }, []);
   return (
     <div>
