@@ -28,13 +28,15 @@ function App() {
   const [height, setHeight] = useState(400);
   const [width, setWidth] = useState(600);
   const [lineData, setLineData] = useState<ChartData[]>([]);
+  const [routeIds, setRouteIds] = useState<string[]>([]);
   const [currentGeneration, setCurrentGeneration] = useState(0);
-  const mutationReteRef = useRef(0.13);
+  const mutationReteRef = useRef(0.2);
   const crossOverRateRef = useRef(0.83);
   const citiesCountRef = useRef(20);
-  const populationSizeRef = useRef(100);
+  const populationSizeRef = useRef(500);
   const generationsCountRef = useRef(1000);
   const tornaumentSizeRef = useRef(5);
+  const stopRef = useRef(false);
 
   const drawLines = (route: Route) => {
     const lines: Line[] = [];
@@ -71,6 +73,10 @@ function App() {
       generationIndex < generationsCountRef.current;
       generationIndex++
     ) {
+      if (stopRef.current) {
+        stopRef.current = false;
+        break;
+      }
       const childPopulation = new Population(false);
       childPopulation.routes = [currentPopulation.getFittest()];
       // Crossover
@@ -93,12 +99,8 @@ function App() {
           childPopulation.addRoute(childA);
           childPopulation.addRoute(childB);
         }
-      } while (
-        childPopulation.routes.length <
-        populationSizeRef.current
-      );
+      } while (childPopulation.routes.length < populationSizeRef.current);
 
-      
       // do {
       //   let selectedChromosome: Route;
 
@@ -114,11 +116,14 @@ function App() {
       //   newPopulation.addRoute(sortedParentRoutes[i]);
       // }
       // Mutation
+
       for (let index = 0; index < childPopulation.routes.length; index++) {
-        childPopulation.routes[index] = Mutation(
+        const child = Mutation(
           childPopulation.routes[index],
           mutationReteRef.current
         );
+        index == 50 && console.log("mut");
+        childPopulation.routes[index] = child;
       }
       setCurrentGeneration(generationIndex);
       currentPopulation = childPopulation;
@@ -129,16 +134,20 @@ function App() {
           fitness: fittest.getFitness(),
         } as ChartData)
       );
+      setRouteIds((_ids) => _ids.concat(fittest.routeUniqueID()));
       drawLines(fittest);
       await delay(1);
     }
   };
   useEffect(() => {
     reset();
+    setLines([]);
   }, []);
   const reset = () => {
     initialCities();
     setLines([]);
+    setRouteIds([]);
+    setLineData([])
   };
   return (
     <div className="wrapper">
@@ -160,10 +169,17 @@ function App() {
           </svg>
         </div>
         <div className="controls">
+
           <div className="description">
             <div className="label">Generation Number</div>
             <div className="value">
               <div>{currentGeneration}</div>
+            </div>
+          </div>
+          <div className="description">
+            <div className="label">Best Route</div>
+            <div className="value">
+              <div>{routeIds.length > 0 && routeIds[routeIds.length - 1]}</div>
             </div>
           </div>
           <div className="description">
@@ -260,12 +276,29 @@ function App() {
             <button onClick={reset} className="initial-button">
               Reset
             </button>
+            <button
+              onClick={() => {
+                setRouteIds((_ids) => _ids.concat(["stopped"]));
+                stopRef.current = true;
+              }}
+              className="stop-button"
+            >
+              Stop
+            </button>
           </div>
         </div>
       </div>
-      <div >
+      <div>
         <div className="chart">
           <Chart data={lineData} />
+        </div>
+      </div>
+      <div>
+        <h4>Routes</h4>
+        <div className="route-ids">
+          {routeIds.map((r) => (
+            <div>{r}</div>
+          ))}
         </div>
       </div>
     </div>

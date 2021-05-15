@@ -58,10 +58,11 @@ export const CrossOver = (routeA: Route, routeB: Route): [Route, Route] => {
 };
 export const Mutation = (route: Route, mutationRate: number): Route => {
   const chromosome = [...route.route];
+
   const mutateR = Math.random();
   if (mutationRate > mutateR) {
-    const randMutiationPointA = randomGenerator(chromosome.length);
-    const randMutiationPointB = randomGenerator(chromosome.length);
+    const randMutiationPointA = randomGenerator(chromosome.length - 1);
+    const randMutiationPointB = randomGenerator(chromosome.length - 1);
     const temp = chromosome[randMutiationPointA];
     chromosome[randMutiationPointA] = chromosome[randMutiationPointB];
     chromosome[randMutiationPointB] = temp;
