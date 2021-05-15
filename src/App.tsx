@@ -72,6 +72,7 @@ function App() {
       generationIndex++
     ) {
       const childPopulation = new Population(false);
+      childPopulation.routes = [currentPopulation.getFittest()];
       // Crossover
       do {
         const randCross = Math.random();
@@ -94,36 +95,33 @@ function App() {
         }
       } while (
         childPopulation.routes.length <
-        calcPercent(populationSizeRef.current, 150)
+        populationSizeRef.current
       );
 
-      const newPopulation = new Population(false);
-      newPopulation.routes = [currentPopulation.getFittest()];
-      do {
-        let selectedChromosome: Route;
+      
+      // do {
+      //   let selectedChromosome: Route;
 
-        selectedChromosome = TournaumentSelection(
-          childPopulation,
-          tornaumentSizeRef.current
-        );
+      //   selectedChromosome = TournaumentSelection(
+      //     childPopulation,
+      //     tornaumentSizeRef.current
+      //   );
 
-        newPopulation.addRoute(selectedChromosome);
-      } while (newPopulation.routes.length < populationSizeRef.current);
+      //   newPopulation.addRoute(selectedChromosome);
+      // } while (newPopulation.routes.length < populationSizeRef.current);
       // const sortedParentRoutes = SortRoutes(currentPopulation.routes);
       // for (let i = 0; i < calcPercent(populationSizeRef.current, 5); i++) {
       //   newPopulation.addRoute(sortedParentRoutes[i]);
       // }
       // Mutation
-      for (let index = 0; index < newPopulation.routes.length; index++) {
-        newPopulation.routes[index] = Mutation(
-          newPopulation.routes[index],
+      for (let index = 0; index < childPopulation.routes.length; index++) {
+        childPopulation.routes[index] = Mutation(
+          childPopulation.routes[index],
           mutationReteRef.current
         );
       }
-      console.log("population", newPopulation.routes.length);
-
       setCurrentGeneration(generationIndex);
-      currentPopulation = newPopulation;
+      currentPopulation = childPopulation;
       const fittest = currentPopulation.getFittest();
       setLineData((_lineData) =>
         _lineData.concat({
