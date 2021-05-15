@@ -6,6 +6,7 @@ import { Route } from "./GA/route";
 import { Population } from "./GA/popultaion";
 import {
   CrossOver,
+  hasProgress,
   Mutation,
   SortRoutes,
   TournaumentSelection,
@@ -14,8 +15,7 @@ import { logRoutes } from "./utilities/logger";
 
 import { fireEvent } from "@testing-library/react";
 import { Chart, ChartData } from "./chart";
-const calcPercent = (total: number, percent: number) =>
-  Math.floor((percent * total) / 100);
+
 type Line = {
   x1: number;
   y1: number;
@@ -35,6 +35,7 @@ function App() {
   const populationSizeRef = useRef(500);
   const generationsCountRef = useRef(1000);
   const tornaumentSizeRef = useRef(5);
+  const fitnessHistory = useRef<number[]>([]);
   const stopRef = useRef(false);
 
   const drawLines = (route: Route) => {
@@ -72,7 +73,15 @@ function App() {
       generationIndex < generationsCountRef.current;
       generationIndex++
     ) {
-      if (stopRef.current) {
+      fitnessHistory.current = [];
+      if (
+        stopRef.current ||
+        !hasProgress(
+          generationsCountRef.current,
+          generationIndex,
+          fitnessHistory.current
+        )
+      ) {
         stopRef.current = false;
         break;
       }
@@ -118,18 +127,19 @@ function App() {
           childPopulation.routes[index],
           mutationReteRef.current
         );
-        index == 50 && console.log("mut");
         childPopulation.routes[index] = child;
       }
-      setCurrentGeneration(generationIndex);
+      setCurrentGeneration(generationIndex + 1);
       currentPopulation = childPopulation;
       const fittest = currentPopulation.getFittest();
+      const fittestFitness = fittest.getFitness();
       setLineData((_lineData) =>
         _lineData.concat({
           name: generationIndex.toString(),
-          fitness: fittest.getFitness(),
+          fitness: fittestFitness,
         } as ChartData)
       );
+      fitnessHistory.current = fitnessHistory.current.concat(fittestFitness);
       setRouteIds((_ids) => _ids.concat(fittest.routeUniqueID()));
       drawLines(fittest);
       await delay(1);

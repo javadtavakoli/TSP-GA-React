@@ -1,4 +1,6 @@
+import { ChartData } from "../chart";
 import { logRoutes } from "../utilities/logger";
+import { calcPercent } from "../utilities/percent";
 import { randomGenerator } from "../utilities/randomGenerator";
 import { CitiesInitializer } from "./city";
 import { Population } from "./popultaion";
@@ -99,4 +101,16 @@ export const SortRoutes = (routes: Route[]): Route[] => {
 type RouteFitness = {
   route: Route;
   fitness: number;
+};
+export const hasProgress = (
+  populationSize: number,
+  currentGeneration: number,
+  fitnessData: number[]
+): boolean => {
+  if (calcPercent(populationSize, 10) > currentGeneration) {
+    return true;
+  }
+  const item80Percent = calcPercent(fitnessData.length, 80);
+  const lastItem = fitnessData.length - 1;
+  return fitnessData[item80Percent] < fitnessData[lastItem];
 };
