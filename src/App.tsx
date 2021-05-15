@@ -26,7 +26,7 @@ function App() {
   const [width, setWidth] = useState(600);
   const [currentGeneration, setCurrentGeneration] = useState(0);
   const mutationReteRef = useRef(0.3);
-  const crossOverRateRef = useRef(0.90);
+  const crossOverRateRef = useRef(0.9);
   const citiesCountRef = useRef(20);
   const populationSizeRef = useRef(100);
   const generationsCountRef = useRef(1000);
@@ -70,7 +70,7 @@ function App() {
     ) {
       const childPopulation = new Population(false);
       // Crossover
-      do{
+      do {
         const randCross = Math.random();
         if (crossOverRateRef.current > randCross) {
           const chromosomeA = TournaumentSelection(
@@ -89,9 +89,13 @@ function App() {
           childPopulation.addRoute(childA);
           childPopulation.addRoute(childB);
         }
-      }while(childPopulation.routes.length<calcPercent(populationSizeRef.current,150))
+      } while (
+        childPopulation.routes.length <
+        calcPercent(populationSizeRef.current, 150)
+      );
 
       const newPopulation = new Population(false);
+      newPopulation.routes = [currentPopulation.getFittest()];
       do {
         let selectedChromosome: Route;
 
@@ -101,13 +105,11 @@ function App() {
         );
 
         newPopulation.addRoute(selectedChromosome);
-      } while (
-        newPopulation.routes.length < calcPercent(populationSizeRef.current, 95)
-      );
-      const sortedParentRoutes = SortRoutes(currentPopulation.routes);
-      for (let i = 0; i < calcPercent(populationSizeRef.current, 5); i++) {
-        newPopulation.addRoute(sortedParentRoutes[i]);
-      }
+      } while (newPopulation.routes.length < populationSizeRef.current);
+      // const sortedParentRoutes = SortRoutes(currentPopulation.routes);
+      // for (let i = 0; i < calcPercent(populationSizeRef.current, 5); i++) {
+      //   newPopulation.addRoute(sortedParentRoutes[i]);
+      // }
       // Mutation
       for (let index = 0; index < newPopulation.routes.length; index++) {
         newPopulation.routes[index] = Mutation(
@@ -130,7 +132,7 @@ function App() {
     let currentPopulation = new Population(true, 1000);
   }, []);
   return (
-    <div>
+    <div className="container">
       <div>
         {currentGeneration} -<button onClick={solve}>Solve</button>
       </div>
