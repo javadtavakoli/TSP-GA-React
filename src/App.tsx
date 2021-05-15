@@ -68,12 +68,13 @@ function App() {
   const solve = async () => {
     let currentPopulation = new Population(true, populationSizeRef.current);
     drawLines(currentPopulation.getFittest());
+    fitnessHistory.current = [];
+
     for (
       let generationIndex = 0;
       generationIndex < generationsCountRef.current;
       generationIndex++
     ) {
-      fitnessHistory.current = [];
       if (
         stopRef.current ||
         !hasProgress(
@@ -139,7 +140,8 @@ function App() {
           fitness: fittestFitness,
         } as ChartData)
       );
-      fitnessHistory.current = fitnessHistory.current.concat(fittestFitness);
+      fitnessHistory.current = [...fitnessHistory.current,fittestFitness];
+      
       setRouteIds((_ids) => _ids.concat(fittest.routeUniqueID()));
       drawLines(fittest);
       await delay(1);
