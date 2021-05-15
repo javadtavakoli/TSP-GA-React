@@ -293,8 +293,8 @@ function App() {
       <div>
         <h4>Routes</h4>
         <div className="route-ids">
-          {routeIds.map((r) => (
-            <div>{r}</div>
+          {routeIds.map((r,i) => (
+            <div>{i}: {r}</div>
           ))}
         </div>
       </div>
