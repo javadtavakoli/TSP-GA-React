@@ -1,38 +1,62 @@
-.App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.container{
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
 
-.App-link {
-  color: #61dafb;
 }
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.wrapper{
+  max-width: 50%;
+  box-shadow: #dff9fb 0 0 9px 0px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+button{
+  border:none;
+  padding: 0.5rem 2rem;
+  background: #4834d4;
+  color: #fff;
+}
+.label{
+  font-weight: bold;
+  min-width: 25%;
+}
+.value{
+  max-width: 70%;
+}
+.value>*{
+  margin-left: 1rem;
+  width: 100%;
+}
+.playground line{
+  stroke:#eb4d4b ;
+  stroke-width: 2px;
+}
+.playground circle{
+  fill: #4834d4;
+}
+.playground{
+  background: #dff9fb;
+}
+.controls {
+  padding: 0 2rem;
+  flex: 1;
+}
+input {
+  border: none;
+  border-bottom: 1px solid #4834d4;
+  outline: none;
+}
+.description{
+  display: flex;
+  margin-bottom: 1rem;
+}
+.buttons {
+  display: flex;
+}
+.initial-button,.reset-button{
+  margin-left: 1rem;
+}
+.reset-button{
+  background: #eb4d4b;
+}
+.chart{
+  height: 30rem;
 }

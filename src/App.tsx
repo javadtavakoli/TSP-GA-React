@@ -11,6 +11,9 @@ import {
   TournaumentSelection,
 } from "./GA/functions";
 import { logRoutes } from "./utilities/logger";
+
+import { fireEvent } from "@testing-library/react";
+import { Chart, ChartData } from "./chart";
 const calcPercent = (total: number, percent: number) =>
   Math.floor((percent * total) / 100);
 type Line = {
@@ -24,9 +27,10 @@ function App() {
   const [lines, setLines] = useState<Line[]>([]);
   const [height, setHeight] = useState(400);
   const [width, setWidth] = useState(600);
+  const [lineData, setLineData] = useState<ChartData[]>([]);
   const [currentGeneration, setCurrentGeneration] = useState(0);
-  const mutationReteRef = useRef(0.3);
-  const crossOverRateRef = useRef(0.9);
+  const mutationReteRef = useRef(0.13);
+  const crossOverRateRef = useRef(0.83);
   const citiesCountRef = useRef(20);
   const populationSizeRef = useRef(100);
   const generationsCountRef = useRef(1000);
@@ -61,7 +65,6 @@ function App() {
 
   const solve = async () => {
     let currentPopulation = new Population(true, populationSizeRef.current);
-    logRoutes(currentPopulation, -1);
     drawLines(currentPopulation.getFittest());
     for (
       let generationIndex = 0;
@@ -122,36 +125,139 @@ function App() {
       setCurrentGeneration(generationIndex);
       currentPopulation = newPopulation;
       const fittest = currentPopulation.getFittest();
+      setLineData((_lineData) =>
+        _lineData.concat({
+          name: generationIndex.toString(),
+          fitness: fittest.getFitness(),
+        } as ChartData)
+      );
       drawLines(fittest);
       await delay(1);
     }
   };
   useEffect(() => {
+    reset();
+  }, []);
+  const reset = () => {
     initialCities();
     setLines([]);
-    let currentPopulation = new Population(true, 1000);
-  }, []);
+  };
   return (
-    <div className="container">
-      <div>
-        {currentGeneration} -<button onClick={solve}>Solve</button>
+    <div className="wrapper">
+      <div className="container">
+        <div className="playground">
+          <svg height={height} width={width}>
+            {cities.map((city) => (
+              <circle cx={city.x} cy={city.y} r="3" />
+            ))}
+            {lines.map((line) => (
+              <line
+                key={`${line.x1}-${line.y1},${line.x2}-${line.y2}`}
+                x1={line.x1}
+                y1={line.y1}
+                x2={line.x2}
+                y2={line.y2}
+              />
+            ))}
+          </svg>
+        </div>
+        <div className="controls">
+          <div className="description">
+            <div className="label">Generation Number</div>
+            <div className="value">
+              <div>{currentGeneration}</div>
+            </div>
+          </div>
+          <div className="description">
+            <div className="label">Height</div>
+            <div className="value">
+              <input
+                value={height}
+                onChange={(e) => setHeight(Number.parseInt(e.target.value))}
+              />
+            </div>
+          </div>
+          <div className="description">
+            <div className="label">Width</div>
+            <div className="value">
+              <input
+                value={width}
+                onChange={(e) => setWidth(Number.parseInt(e.target.value))}
+              />
+            </div>
+          </div>
+          <div className="description">
+            <div className="label">Mutation Rate</div>
+            <div className="value">
+              <input
+                defaultValue={mutationReteRef.current}
+                onChange={(e) => {
+                  mutationReteRef.current = Number.parseFloat(e.target.value);
+                }}
+              />
+            </div>
+          </div>
+          <div className="description">
+            <div className="label">Crossover Rate</div>
+            <div className="value">
+              <input
+                defaultValue={crossOverRateRef.current}
+                onChange={(e) => {
+                  crossOverRateRef.current = Number.parseFloat(e.target.value);
+                }}
+              />
+            </div>
+          </div>
+          <div className="description">
+            <div className="label">Popultaion Size</div>
+            <div className="value">
+              <input
+                defaultValue={populationSizeRef.current}
+                onChange={(e) => {
+                  populationSizeRef.current = Number.parseInt(e.target.value);
+                }}
+              />
+            </div>
+          </div>
+          <div className="description">
+            <div className="label">Generation Count</div>
+            <div className="value">
+              <input
+                defaultValue={generationsCountRef.current}
+                onChange={(e) => {
+                  generationsCountRef.current = Number.parseInt(e.target.value);
+                }}
+              />
+            </div>
+          </div>
+          <div className="description">
+            <div className="label">Tornaument Size</div>
+            <div className="value">
+              <input
+                defaultValue={tornaumentSizeRef.current}
+                onChange={(e) => {
+                  tornaumentSizeRef.current = Number.parseInt(e.target.value);
+                }}
+              />
+            </div>
+          </div>
+          <div className="buttons">
+            <button onClick={solve} className="reset-button">
+              Solve
+            </button>
+            <button onClick={initialCities} className="initial-button">
+              Initial Cities
+            </button>
+            <button onClick={reset} className="initial-button">
+              Reset
+            </button>
+          </div>
+        </div>
       </div>
-      <div>
-        <svg height={height} width={width}>
-          {cities.map((city) => (
-            <circle cx={city.x} cy={city.y} r="3" fill="blue" />
-          ))}
-          {lines.map((line) => (
-            <line
-              key={`${line.x1}-${line.y1},${line.x2}-${line.y2}`}
-              x1={line.x1}
-              y1={line.y1}
-              x2={line.x2}
-              y2={line.y2}
-              style={{ stroke: `rgb(255,0,0)`, strokeWidth: 2 }}
-            />
-          ))}
-        </svg>
+      <div >
+        <div className="chart">
+          <Chart data={lineData} />
+        </div>
       </div>
     </div>
   );
