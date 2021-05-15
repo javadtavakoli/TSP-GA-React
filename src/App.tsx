@@ -31,7 +31,6 @@ function App() {
   const [routeIds, setRouteIds] = useState<string[]>([]);
   const [currentGeneration, setCurrentGeneration] = useState(0);
   const mutationReteRef = useRef(0.2);
-  const crossOverRateRef = useRef(0.83);
   const citiesCountRef = useRef(20);
   const populationSizeRef = useRef(500);
   const generationsCountRef = useRef(1000);
@@ -81,24 +80,21 @@ function App() {
       childPopulation.routes = [currentPopulation.getFittest()];
       // Crossover
       do {
-        const randCross = Math.random();
-        if (crossOverRateRef.current > randCross) {
-          const chromosomeA = TournaumentSelection(
+        const chromosomeA = TournaumentSelection(
+          currentPopulation,
+          tornaumentSizeRef.current
+        );
+        let chromosomeB: Route;
+        do {
+          chromosomeB = TournaumentSelection(
             currentPopulation,
             tornaumentSizeRef.current
           );
-          let chromosomeB: Route;
-          do {
-            chromosomeB = TournaumentSelection(
-              currentPopulation,
-              tornaumentSizeRef.current
-            );
-          } while (chromosomeA.routeUniqueID() == chromosomeB.routeUniqueID());
+        } while (chromosomeA.routeUniqueID() == chromosomeB.routeUniqueID());
 
-          const [childA, childB] = CrossOver(chromosomeA, chromosomeB);
-          childPopulation.addRoute(childA);
-          childPopulation.addRoute(childB);
-        }
+        const [childA, childB] = CrossOver(chromosomeA, chromosomeB);
+        childPopulation.addRoute(childA);
+        childPopulation.addRoute(childB);
       } while (childPopulation.routes.length < populationSizeRef.current);
 
       // do {
@@ -147,7 +143,7 @@ function App() {
     initialCities();
     setLines([]);
     setRouteIds([]);
-    setLineData([])
+    setLineData([]);
   };
   return (
     <div className="wrapper">
@@ -169,7 +165,6 @@ function App() {
           </svg>
         </div>
         <div className="controls">
-
           <div className="description">
             <div className="label">Generation Number</div>
             <div className="value">
@@ -211,17 +206,7 @@ function App() {
               />
             </div>
           </div>
-          <div className="description">
-            <div className="label">Crossover Rate</div>
-            <div className="value">
-              <input
-                defaultValue={crossOverRateRef.current}
-                onChange={(e) => {
-                  crossOverRateRef.current = Number.parseFloat(e.target.value);
-                }}
-              />
-            </div>
-          </div>
+
           <div className="description">
             <div className="label">Popultaion Size</div>
             <div className="value">
