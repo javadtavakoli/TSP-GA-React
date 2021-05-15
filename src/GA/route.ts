@@ -42,7 +42,7 @@ export class Route {
     return length;
   };
   public getFitness = (): number => {
-    return 1 / this.measureRouteLength();
+    return 1 / this.measureRouteLength() * 1000;
   };
 }
 export const getRandomCityIndex = () => {
