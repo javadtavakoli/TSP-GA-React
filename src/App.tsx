@@ -17,6 +17,12 @@ import {
 } from "./GA/functions";
 
 import { Chart, ChartData } from "./chart";
+enum MutationTypes {
+  SwapMutation,
+  MultiSwapMutation,
+  ShuffleMutation,
+  InversionMutation,
+}
 const calcPercent = (total: number, percent: number) =>
   Math.floor((percent * total) / 100);
 type Line = {
@@ -26,7 +32,7 @@ type Line = {
   y2: number;
 };
 function App() {
-  const [bestRouteID, setBestRouteID] = useState("");
+  const [bestRoute, setBestRoute] = useState<Route>();
   const [cities, setCities] = useState<City[]>([]);
   const [lines, setLines] = useState<Line[]>([]);
   const [height, setHeight] = useState(400);
@@ -34,11 +40,10 @@ function App() {
   const [lineData, setLineData] = useState<ChartData[]>([]);
   const [currentGeneration, setCurrentGeneration] = useState(0);
   const mutationRateRef = useRef(0.1);
-  const crossOverRateRef = useRef(0.83);
   const citiesCountRef = useRef(20);
   const populationSizeRef = useRef(100);
   const generationsCountRef = useRef(200);
-  const tornaumentSizeRef = useRef(5);
+  const mutationTypeRef = useRef(MutationTypes.InversionMutation);
 
   const drawLines = (route: Route) => {
     setBestRouteID(route.routeUniqueID());
@@ -71,6 +76,19 @@ function App() {
   const solve = async () => {
     let currentPopulation = new Population(true, populationSizeRef.current);
     drawLines(currentPopulation.getFittest());
+    const mutationMethod: (route: Route, mutationRate: number) => Route =
+      (() => {
+        switch (mutationTypeRef.current) {
+          case MutationTypes.InversionMutation:
+            return InversionMutation;
+          case MutationTypes.MultiSwapMutation:
+            return MultiSwapMutation;
+          case MutationTypes.ShuffleMutation:
+            return ShuffleMutation;
+          case MutationTypes.SwapMutation:
+            return SwapMutation;
+        }
+      })();
     for (
       let generationIndex = 0;
       generationIndex < generationsCountRef.current;
@@ -92,7 +110,7 @@ function App() {
 
       // Mutation
       for (let index = 0; index < childPopulation.routes.length; index++) {
-        childPopulation.routes[index] = InversionMutation(
+        childPopulation.routes[index] = mutationMethod(
           childPopulation.routes[index],
           mutationRateRef.current
         );
@@ -175,17 +193,7 @@ function App() {
               />
             </div>
           </div>
-          <div className="description">
-            <div className="label">Crossover Rate</div>
-            <div className="value">
-              <input
-                defaultValue={crossOverRateRef.current}
-                onChange={(e) => {
-                  crossOverRateRef.current = Number.parseFloat(e.target.value);
-                }}
-              />
-            </div>
-          </div>
+
           <div className="description">
             <div className="label">Popultaion Size</div>
             <div className="value">
@@ -220,14 +228,18 @@ function App() {
             </div>
           </div>
           <div className="description">
-            <div className="label">Tornaument Size</div>
+            <div className="label">Mutation Method</div>
             <div className="value">
-              <input
-                defaultValue={tornaumentSizeRef.current}
-                onChange={(e) => {
-                  tornaumentSizeRef.current = Number.parseInt(e.target.value);
-                }}
-              />
+              <select
+                defaultValue={mutationTypeRef.current.toString()}
+                onChange={(e) => (mutationTypeRef.current = +e.target.value)}
+              >
+                {Object.entries(MutationTypes).map((m) => {
+                  if (isNaN(Number(m[1]))) {
+                    return <option value={m[0].toString()}>{m[1]}</option>;
+                  }
+                })}
+              </select>
             </div>
           </div>
           <div className="buttons">
