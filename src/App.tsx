@@ -7,12 +7,13 @@ import { Population } from "./GA/popultaion";
 import {
   CrossOver,
   InversionMutation,
-  Mutation,
+  SwapMutation,
   Order1CrossOver,
   RankSelection,
   ShuffleMutation,
   SortRoutes,
   TournaumentSelection,
+  MultiSwapMutation,
 } from "./GA/functions";
 
 import { Chart, ChartData } from "./chart";

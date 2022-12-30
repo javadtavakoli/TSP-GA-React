@@ -161,7 +161,7 @@ export const InversionMutation = (route: Route, mutationRate: number): Route => 
   return mutatedRoute;
 
 }
-export const Mutation = (route: Route, mutationRate: number): Route => {
+export const SwapMutation = (route: Route, mutationRate: number): Route => {
   const chromosome = [...route.route];
   const mutateR = Math.random();
   if (mutationRate > mutateR) {
@@ -171,6 +171,26 @@ export const Mutation = (route: Route, mutationRate: number): Route => {
     const temp = chromosome[randMutiationPointA];
     chromosome[randMutiationPointA] = chromosome[randMutiationPointB];
     chromosome[randMutiationPointB] = temp;
+
+  }
+  const newRoute = new Route(false);
+  newRoute.route = [...chromosome];
+  return route;
+};
+export const MultiSwapMutation = (route: Route, mutationRate: number): Route => {
+  const chromosome = [...route.route];
+  const mutateR = Math.random();
+
+  if (mutationRate > mutateR) {
+
+    const totalSwaps = randomGenerator(chromosome.length / 2);
+    for (let i = 0; i < totalSwaps; i++) {
+      const randMutiationPointA = randomGenerator(chromosome.length);
+      const randMutiationPointB = randomGenerator(chromosome.length);
+      const temp = chromosome[randMutiationPointA];
+      chromosome[randMutiationPointA] = chromosome[randMutiationPointB];
+      chromosome[randMutiationPointB] = temp;
+    }
 
   }
   const newRoute = new Route(false);
