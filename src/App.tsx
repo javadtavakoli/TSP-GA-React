@@ -6,13 +6,15 @@ import { Route } from "./GA/route";
 import { Population } from "./GA/popultaion";
 import {
   CrossOver,
+  InversionMutation,
   Mutation,
+  Order1CrossOver,
+  RankSelection,
+  ShuffleMutation,
   SortRoutes,
   TournaumentSelection,
 } from "./GA/functions";
-import { logRoutes } from "./utilities/logger";
 
-import { fireEvent } from "@testing-library/react";
 import { Chart, ChartData } from "./chart";
 const calcPercent = (total: number, percent: number) =>
   Math.floor((percent * total) / 100);
@@ -23,20 +25,22 @@ type Line = {
   y2: number;
 };
 function App() {
+  const [bestRouteID, setBestRouteID] = useState("");
   const [cities, setCities] = useState<City[]>([]);
   const [lines, setLines] = useState<Line[]>([]);
   const [height, setHeight] = useState(400);
   const [width, setWidth] = useState(600);
   const [lineData, setLineData] = useState<ChartData[]>([]);
   const [currentGeneration, setCurrentGeneration] = useState(0);
-  const mutationReteRef = useRef(0.13);
+  const mutationRateRef = useRef(0.1);
   const crossOverRateRef = useRef(0.83);
   const citiesCountRef = useRef(20);
   const populationSizeRef = useRef(100);
-  const generationsCountRef = useRef(1000);
+  const generationsCountRef = useRef(200);
   const tornaumentSizeRef = useRef(5);
 
   const drawLines = (route: Route) => {
+    setBestRouteID(route.routeUniqueID());
     const lines: Line[] = [];
     const cities = CitiesInitializer.cities;
     for (let index = 1; index < route.route.length; index++) {
@@ -74,56 +78,29 @@ function App() {
       const childPopulation = new Population(false);
       // Crossover
       do {
-        const randCross = Math.random();
-        if (crossOverRateRef.current > randCross) {
-          const chromosomeA = TournaumentSelection(
-            currentPopulation,
-            tornaumentSizeRef.current
-          );
-          let chromosomeB: Route;
-          do {
-            chromosomeB = TournaumentSelection(
-              currentPopulation,
-              tornaumentSizeRef.current
-            );
-          } while (chromosomeA.routeUniqueID() == chromosomeB.routeUniqueID());
+        const chromosomeA = RankSelection(currentPopulation);
 
-          const [childA, childB] = CrossOver(chromosomeA, chromosomeB);
+        const chromosomeB = RankSelection(currentPopulation);
+
+        if (chromosomeA.routeUniqueID() !== chromosomeB.routeUniqueID()) {
+          const [childA, childB] = Order1CrossOver(chromosomeA, chromosomeB);
           childPopulation.addRoute(childA);
           childPopulation.addRoute(childB);
         }
-      } while (
-        childPopulation.routes.length <
-        calcPercent(populationSizeRef.current, 150)
-      );
+      } while (childPopulation.routes.length <= populationSizeRef.current - 1);
 
-      const newPopulation = new Population(false);
-      newPopulation.routes = [currentPopulation.getFittest()];
-      do {
-        let selectedChromosome: Route;
-
-        selectedChromosome = TournaumentSelection(
-          childPopulation,
-          tornaumentSizeRef.current
-        );
-
-        newPopulation.addRoute(selectedChromosome);
-      } while (newPopulation.routes.length < populationSizeRef.current);
-      // const sortedParentRoutes = SortRoutes(currentPopulation.routes);
-      // for (let i = 0; i < calcPercent(populationSizeRef.current, 5); i++) {
-      //   newPopulation.addRoute(sortedParentRoutes[i]);
-      // }
       // Mutation
-      for (let index = 0; index < newPopulation.routes.length; index++) {
-        newPopulation.routes[index] = Mutation(
-          newPopulation.routes[index],
-          mutationReteRef.current
+      for (let index = 0; index < childPopulation.routes.length; index++) {
+        childPopulation.routes[index] = InversionMutation(
+          childPopulation.routes[index],
+          mutationRateRef.current
         );
       }
-      console.log("population", newPopulation.routes.length);
+      childPopulation.addRoute(currentPopulation.getFittest());
 
       setCurrentGeneration(generationIndex);
-      currentPopulation = newPopulation;
+
+      currentPopulation = childPopulation;
       const fittest = currentPopulation.getFittest();
       setLineData((_lineData) =>
         _lineData.concat({
@@ -190,9 +167,9 @@ function App() {
             <div className="label">Mutation Rate</div>
             <div className="value">
               <input
-                defaultValue={mutationReteRef.current}
+                defaultValue={mutationRateRef.current}
                 onChange={(e) => {
-                  mutationReteRef.current = Number.parseFloat(e.target.value);
+                  mutationRateRef.current = Number.parseFloat(e.target.value);
                 }}
               />
             </div>
@@ -263,9 +240,10 @@ function App() {
               Reset
             </button>
           </div>
+          {bestRouteID !== "" && <div>Best Route: {bestRouteID}</div>}
         </div>
       </div>
-      <div >
+      <div>
         <div className="chart">
           <Chart data={lineData} />
         </div>

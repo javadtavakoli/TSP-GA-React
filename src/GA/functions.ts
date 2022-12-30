@@ -4,6 +4,38 @@ import { CitiesInitializer } from "./city";
 import { Population } from "./popultaion";
 import { getRandomIndexNotInRoute, Route } from "./route";
 const GENE_PLACEHOLDER = -1;
+const makeOrder1CrossOverChild = (routeA: Route, routeB: Route): Route => {
+  const routeLength = routeA.route.length;
+  const swathStart = randomGenerator(routeLength - 2);
+  const swathLength = randomGenerator(routeLength - swathStart, 1);
+  const swath: number[] = [];
+  const child: number[] = [...new Array(routeLength)].fill(0);
+
+  for (let i = 0; i < swathLength; i++) {
+    const routeIndex = i + swathStart
+    const currentCity = routeA.route[routeIndex];
+    swath.push(currentCity);
+    child[routeIndex] = currentCity;
+  }
+  let routeBIndex = 0;
+  for (let i = 0; i < routeLength; i++) {
+    if (i < swathStart || i >= swathStart + swathLength) {
+      while (swath.includes(routeB.route[routeBIndex])) {
+        routeBIndex++;
+      }
+      child[i] = routeB.route[routeBIndex];
+      routeBIndex++;
+    }
+  }
+  const childRoute = new Route(false);
+  childRoute.route = child;
+  return childRoute;
+}
+export const Order1CrossOver = (routeA: Route, routeB: Route): [Route, Route] => {
+  const childA = makeOrder1CrossOverChild(routeA, routeB);
+  const childB = makeOrder1CrossOverChild(routeB, routeA);
+  return [childA, childB]
+}
 export const CrossOver = (routeA: Route, routeB: Route): [Route, Route] => {
   const routeLength = routeA.route.length;
   const chromosomeA: number[] = [];
@@ -56,15 +88,90 @@ export const CrossOver = (routeA: Route, routeB: Route): [Route, Route] => {
   childRouteB.route = chromosomeB;
   return [childRouteA, childRouteB];
 };
+const shuffleArray = <T,>(array: T[]) => {
+  let clonedArray = [...array];
+  const length = array.length;
+  const shuffledArray: T[] = [];
+
+  do {
+    const randomIndex = randomGenerator(clonedArray.length);
+    const selectedElement = clonedArray[randomIndex];
+    shuffledArray.push(selectedElement);
+    clonedArray = clonedArray.filter((_, index) => index != randomIndex);
+
+  } while (shuffledArray.length !== length);
+  return shuffledArray
+}
+export const ShuffleMutation = (route: Route, mutationRate: number): Route => {
+  if (Math.random() > mutationRate) return route;
+  const routeLength = route.route.length;
+  const swathStart = randomGenerator(routeLength - 2);
+  const swathLength = randomGenerator(routeLength - swathStart, 1);
+  const swath: number[] = [];
+  const mutatedChromosome: number[] = [...new Array(routeLength)].fill(0);
+
+  for (let i = 0; i < swathLength; i++) {
+    const routeIndex = i + swathStart
+    const currentCity = route.route[routeIndex];
+    swath.push(currentCity);
+  }
+
+  const shuffledSwath = shuffleArray(swath);
+
+  for (let i = 0; i < routeLength; i++) {
+    if (i < swathStart || i >= swathStart + swathLength) {
+      mutatedChromosome[i] = route.route[i];
+      continue;
+    }
+    mutatedChromosome[i] = shuffledSwath.shift() || 0;
+
+  }
+  const mutatedRoute = new Route(false);
+  mutatedRoute.route = mutatedChromosome;
+
+  return mutatedRoute;
+
+}
+export const InversionMutation = (route: Route, mutationRate: number): Route => {
+  if (Math.random() > mutationRate) return route;
+  const routeLength = route.route.length;
+  const swathStart = randomGenerator(routeLength - 2);
+  const swathLength = randomGenerator(routeLength - swathStart, 1);
+  const swath: number[] = [];
+  const mutatedChromosome: number[] = [...new Array(routeLength)].fill(0);
+
+  for (let i = 0; i < swathLength; i++) {
+    const routeIndex = i + swathStart
+    const currentCity = route.route[routeIndex];
+    swath.push(currentCity);
+  }
+
+
+  for (let i = 0; i < routeLength; i++) {
+    if (i < swathStart || i >= swathStart + swathLength) {
+      mutatedChromosome[i] = route.route[i];
+      continue;
+    }
+    mutatedChromosome[i] = swath.pop() || 0;
+
+  }
+  const mutatedRoute = new Route(false);
+  mutatedRoute.route = mutatedChromosome;
+
+  return mutatedRoute;
+
+}
 export const Mutation = (route: Route, mutationRate: number): Route => {
   const chromosome = [...route.route];
   const mutateR = Math.random();
   if (mutationRate > mutateR) {
+
     const randMutiationPointA = randomGenerator(chromosome.length);
     const randMutiationPointB = randomGenerator(chromosome.length);
     const temp = chromosome[randMutiationPointA];
     chromosome[randMutiationPointA] = chromosome[randMutiationPointB];
     chromosome[randMutiationPointB] = temp;
+
   }
   const newRoute = new Route(false);
   newRoute.route = [...chromosome];
@@ -99,3 +206,17 @@ type RouteFitness = {
   route: Route;
   fitness: number;
 };
+export const RankSelection = (population: Population): Route => {
+  const routes = SortRoutes(population.routes);
+  const populationLength = population.routes.length;
+  const ranksSum = ((populationLength / 2) * populationLength + 1)
+  const selectedRank = randomGenerator(ranksSum);
+  let summed = 0;
+  for (let i = 1; i < populationLength + 1; i++) {
+    summed += i;
+    if (summed >= selectedRank)
+      return routes[i - 1]
+
+  }
+  throw "Nothing Returned"
+}
