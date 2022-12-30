@@ -46,7 +46,7 @@ function App() {
   const mutationTypeRef = useRef(MutationTypes.InversionMutation);
 
   const drawLines = (route: Route) => {
-    setBestRouteID(route.routeUniqueID());
+    setBestRoute(route);
     const lines: Line[] = [];
     const cities = CitiesInitializer.cities;
     for (let index = 1; index < route.route.length; index++) {
@@ -253,7 +253,18 @@ function App() {
               Reset
             </button>
           </div>
-          {bestRouteID !== "" && <div>Best Route: {bestRouteID}</div>}
+          {bestRoute && (
+            <div>
+              <div className="description">
+                <div className="label">Best route:</div>
+                <div className="value">{bestRoute.routeUniqueID()}</div>
+              </div>
+              <div className="description">
+                <div className="label">Route fitness:</div>
+                <div className="value">{bestRoute.getFitness()}</div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       <div>
