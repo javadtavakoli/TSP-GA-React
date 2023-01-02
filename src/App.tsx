@@ -144,7 +144,7 @@ function App() {
         <div className="playground">
           <svg height={height} width={width}>
             {cities.map((city) => (
-              <circle cx={city.x} cy={city.y} r="3" />
+              <circle cx={city.x} cy={city.y} r="5" />
             ))}
             {lines.map((line) => (
               <line
