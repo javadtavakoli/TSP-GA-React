@@ -44,7 +44,7 @@ function App() {
   const populationSizeRef = useRef(100);
   const generationsCountRef = useRef(200);
   const mutationTypeRef = useRef(MutationTypes.InversionMutation);
-
+  const elitismRef = useRef<boolean>(true);
   const drawLines = (route: Route) => {
     setBestRoute(route);
     const lines: Line[] = [];
@@ -115,7 +115,8 @@ function App() {
           mutationRateRef.current
         );
       }
-      childPopulation.addRoute(currentPopulation.getFittest());
+      if (elitismRef.current)
+        childPopulation.addRoute(currentPopulation.getFittest());
 
       setCurrentGeneration(generationIndex);
 
@@ -240,6 +241,18 @@ function App() {
                   }
                 })}
               </select>
+            </div>
+          </div>
+          <div className="description">
+            <div className="label">Elistism</div>
+            <div className="value">
+              <input
+                type="checkbox"
+                defaultChecked={elitismRef.current}
+                onChange={(e) =>
+                  (elitismRef.current = e.target.value === "checked")
+                }
+              />
             </div>
           </div>
           <div className="buttons">

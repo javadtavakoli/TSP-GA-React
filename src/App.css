@@ -3,6 +3,8 @@
 
 }
 .wrapper{
+  min-width: fit-content;
+
   max-width: 50%;
   box-shadow: #dff9fb 0 0 9px 0px;
   margin: 0 auto;
