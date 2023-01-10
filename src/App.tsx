@@ -162,7 +162,7 @@ function App() {
           <div className="description">
             <div className="label">Generation Number</div>
             <div className="value">
-              <div>{currentGeneration}</div>
+              <div>{currentGeneration + 1}</div>
             </div>
           </div>
           <div className="description">
