@@ -6,14 +6,23 @@ import { Route } from "./GA/route";
 import { Population } from "./GA/popultaion";
 import {
   CrossOver,
-  Mutation,
+  InversionMutation,
+  SwapMutation,
+  Order1CrossOver,
+  RankSelection,
+  ShuffleMutation,
   SortRoutes,
   TournaumentSelection,
+  MultiSwapMutation,
 } from "./GA/functions";
-import { logRoutes } from "./utilities/logger";
 
-import { fireEvent } from "@testing-library/react";
 import { Chart, ChartData } from "./chart";
+enum MutationTypes {
+  SwapMutation,
+  MultiSwapMutation,
+  ShuffleMutation,
+  InversionMutation,
+}
 const calcPercent = (total: number, percent: number) =>
   Math.floor((percent * total) / 100);
 type Line = {
@@ -23,20 +32,21 @@ type Line = {
   y2: number;
 };
 function App() {
+  const [bestRoute, setBestRoute] = useState<Route>();
   const [cities, setCities] = useState<City[]>([]);
   const [lines, setLines] = useState<Line[]>([]);
   const [height, setHeight] = useState(400);
   const [width, setWidth] = useState(600);
   const [lineData, setLineData] = useState<ChartData[]>([]);
   const [currentGeneration, setCurrentGeneration] = useState(0);
-  const mutationReteRef = useRef(0.13);
-  const crossOverRateRef = useRef(0.83);
+  const mutationRateRef = useRef(0.1);
   const citiesCountRef = useRef(20);
   const populationSizeRef = useRef(100);
-  const generationsCountRef = useRef(1000);
-  const tornaumentSizeRef = useRef(5);
-
+  const generationsCountRef = useRef(200);
+  const mutationTypeRef = useRef(MutationTypes.InversionMutation);
+  const elitismRef = useRef<boolean>(true);
   const drawLines = (route: Route) => {
+    setBestRoute(route);
     const lines: Line[] = [];
     const cities = CitiesInitializer.cities;
     for (let index = 1; index < route.route.length; index++) {
@@ -66,6 +76,19 @@ function App() {
   const solve = async () => {
     let currentPopulation = new Population(true, populationSizeRef.current);
     drawLines(currentPopulation.getFittest());
+    const mutationMethod: (route: Route, mutationRate: number) => Route =
+      (() => {
+        switch (mutationTypeRef.current) {
+          case MutationTypes.InversionMutation:
+            return InversionMutation;
+          case MutationTypes.MultiSwapMutation:
+            return MultiSwapMutation;
+          case MutationTypes.ShuffleMutation:
+            return ShuffleMutation;
+          case MutationTypes.SwapMutation:
+            return SwapMutation;
+        }
+      })();
     for (
       let generationIndex = 0;
       generationIndex < generationsCountRef.current;
@@ -74,56 +97,30 @@ function App() {
       const childPopulation = new Population(false);
       // Crossover
       do {
-        const randCross = Math.random();
-        if (crossOverRateRef.current > randCross) {
-          const chromosomeA = TournaumentSelection(
-            currentPopulation,
-            tornaumentSizeRef.current
-          );
-          let chromosomeB: Route;
-          do {
-            chromosomeB = TournaumentSelection(
-              currentPopulation,
-              tornaumentSizeRef.current
-            );
-          } while (chromosomeA.routeUniqueID() == chromosomeB.routeUniqueID());
+        const chromosomeA = RankSelection(currentPopulation);
 
-          const [childA, childB] = CrossOver(chromosomeA, chromosomeB);
+        const chromosomeB = RankSelection(currentPopulation);
+
+        if (chromosomeA.routeUniqueID() !== chromosomeB.routeUniqueID()) {
+          const [childA, childB] = Order1CrossOver(chromosomeA, chromosomeB);
           childPopulation.addRoute(childA);
           childPopulation.addRoute(childB);
         }
-      } while (
-        childPopulation.routes.length <
-        calcPercent(populationSizeRef.current, 150)
-      );
+      } while (childPopulation.routes.length <= populationSizeRef.current - 1);
 
-      const newPopulation = new Population(false);
-      newPopulation.routes = [currentPopulation.getFittest()];
-      do {
-        let selectedChromosome: Route;
-
-        selectedChromosome = TournaumentSelection(
-          childPopulation,
-          tornaumentSizeRef.current
-        );
-
-        newPopulation.addRoute(selectedChromosome);
-      } while (newPopulation.routes.length < populationSizeRef.current);
-      // const sortedParentRoutes = SortRoutes(currentPopulation.routes);
-      // for (let i = 0; i < calcPercent(populationSizeRef.current, 5); i++) {
-      //   newPopulation.addRoute(sortedParentRoutes[i]);
-      // }
       // Mutation
-      for (let index = 0; index < newPopulation.routes.length; index++) {
-        newPopulation.routes[index] = Mutation(
-          newPopulation.routes[index],
-          mutationReteRef.current
+      for (let index = 0; index < childPopulation.routes.length; index++) {
+        childPopulation.routes[index] = mutationMethod(
+          childPopulation.routes[index],
+          mutationRateRef.current
         );
       }
-      console.log("population", newPopulation.routes.length);
+      if (elitismRef.current)
+        childPopulation.addRoute(currentPopulation.getFittest());
 
       setCurrentGeneration(generationIndex);
-      currentPopulation = newPopulation;
+
+      currentPopulation = childPopulation;
       const fittest = currentPopulation.getFittest();
       setLineData((_lineData) =>
         _lineData.concat({
@@ -148,7 +145,7 @@ function App() {
         <div className="playground">
           <svg height={height} width={width}>
             {cities.map((city) => (
-              <circle cx={city.x} cy={city.y} r="3" />
+              <circle cx={city.x} cy={city.y} r="5" />
             ))}
             {lines.map((line) => (
               <line
@@ -165,7 +162,7 @@ function App() {
           <div className="description">
             <div className="label">Generation Number</div>
             <div className="value">
-              <div>{currentGeneration}</div>
+              <div>{currentGeneration + 1}</div>
             </div>
           </div>
           <div className="description">
@@ -190,24 +187,14 @@ function App() {
             <div className="label">Mutation Rate</div>
             <div className="value">
               <input
-                defaultValue={mutationReteRef.current}
+                defaultValue={mutationRateRef.current}
                 onChange={(e) => {
-                  mutationReteRef.current = Number.parseFloat(e.target.value);
+                  mutationRateRef.current = Number.parseFloat(e.target.value);
                 }}
               />
             </div>
           </div>
-          <div className="description">
-            <div className="label">Crossover Rate</div>
-            <div className="value">
-              <input
-                defaultValue={crossOverRateRef.current}
-                onChange={(e) => {
-                  crossOverRateRef.current = Number.parseFloat(e.target.value);
-                }}
-              />
-            </div>
-          </div>
+
           <div className="description">
             <div className="label">Popultaion Size</div>
             <div className="value">
@@ -242,13 +229,29 @@ function App() {
             </div>
           </div>
           <div className="description">
-            <div className="label">Tornaument Size</div>
+            <div className="label">Mutation Method</div>
+            <div className="value">
+              <select
+                defaultValue={mutationTypeRef.current.toString()}
+                onChange={(e) => (mutationTypeRef.current = +e.target.value)}
+              >
+                {Object.entries(MutationTypes).map((m) => {
+                  if (isNaN(Number(m[1]))) {
+                    return <option value={m[0].toString()}>{m[1]}</option>;
+                  }
+                })}
+              </select>
+            </div>
+          </div>
+          <div className="description">
+            <div className="label">Elistism</div>
             <div className="value">
               <input
-                defaultValue={tornaumentSizeRef.current}
-                onChange={(e) => {
-                  tornaumentSizeRef.current = Number.parseInt(e.target.value);
-                }}
+                type="checkbox"
+                defaultChecked={elitismRef.current}
+                onChange={(e) =>
+                  (elitismRef.current = e.target.value === "checked")
+                }
               />
             </div>
           </div>
@@ -263,9 +266,21 @@ function App() {
               Reset
             </button>
           </div>
+          {bestRoute && (
+            <div>
+              <div className="description">
+                <div className="label">Best route:</div>
+                <div className="value">{bestRoute.routeUniqueID()}</div>
+              </div>
+              <div className="description">
+                <div className="label">Route fitness:</div>
+                <div className="value">{bestRoute.getFitness()}</div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-      <div >
+      <div>
         <div className="chart">
           <Chart data={lineData} />
         </div>
